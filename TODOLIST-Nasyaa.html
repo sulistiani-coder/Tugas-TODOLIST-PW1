@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>To-Do List by nasyaa</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #c8a2c8, #b3b3b3); /* lilac + silver */
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+      padding: 30px;
+      max-width: 500px;
+      width: 100%;
+      animation: fadeIn 0.5s ease;
+      position: relative;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    h1 {
+      text-align: center;
+      color: #a678b3; /* lilac tone */
+      margin-bottom: 25px;
+      font-size: 28px;
+    }
+    .input-section {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 25px;
+    }
+    #todoInput {
+      flex: 1;
+      padding: 12px 15px;
+      border: 2px solid #dcdcdc;
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+      transition: 0.3s;
+    }
+    #todoInput:focus {
+      border-color: #a678b3;
+    }
+    #addBtn {
+      padding: 12px 20px;
+      background: #a678b3;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    #addBtn:hover {
+      background: #9157a8;
+    }
+    #searchInput {
+      width: 100%;
+      padding: 10px 15px;
+      border: 2px solid #dcdcdc;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 20px;
+      outline: none;
+    }
+    #searchInput:focus {
+      border-color: #b78fd6;
+    }
+    ul {
+      list-style: none;
+    }
+    .todo-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 15px;
+      background: #f8f8fa;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      transition: 0.3s;
+      animation: slideUp 0.4s ease;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .todo-item:hover {
+      background: #efe6f5;
+      transform: translateX(5px);
+    }
+    .todo-item.completed .todo-text {
+      text-decoration: line-through;
+      color: #161515;
+    }
+    .todo-text {
+      flex: 1;
+      font-size: 15px;
+      color: #333;
+    }
+    .btn-group {
+      display: flex;
+      gap: 8px;
+    }
+    .btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 5px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .btn-done {
+      background: #8bc34a;
+      color: white;
+    }
+    .btn-done:hover {
+      background: #689f38;
+    }
+    .btn-delete {
+      background: #ef4444;
+      color: white;
+    }
+    .btn-delete:hover {
+      background: #d32f2f;
+    }
+    .empty-state {
+      text-align: center;
+      color: #999;
+      padding: 40px 20px;
+      font-size: 15px;
+    }
+    .stats {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f3f3f5;
+      border-radius: 8px;
+      text-align: center;
+      color: #555;
+      font-size: 14px;
+    }
+    .notification {
+      position: fixed;
+      top: 20px;
+      background: #a678b3;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      opacity: 0;
+      transition: 0.4s;
+      font-size: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+    }
+    .notification.show {
+      opacity: 1;
+      top: 40px;
+    }
+    footer {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 13px;
+      color: #a678b3;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="notification" id="notif"></div>
+
+  <div class="container">
+    <h1>📝 To-Do List</h1>
+
+    <div class="input-section">
+      <input type="text" id="todoInput" placeholder="➕ Tambahkan tugas baru..." />
+      <button id="addBtn">Tambah</button>
+    </div>
+
+    <input type="text" id="searchInput" placeholder="🔍 Cari tugas..." />
+
+    <ul id="todoList"></ul>
+
+    <div class="stats">
+      <span id="statsText">Belum ada tugas</span>
+    </div>
+
+    <footer>by nasyaa 💜</footer>
+  </div>
+
+  <script>
+    let todos = [];
+    let todoIdCounter = 0;
+
+    function showNotif(msg, color = "#a678b3") {
+      const notif = document.getElementById("notif");
+      notif.textContent = msg;
+      notif.style.background = color;
+      notif.classList.add("show");
+      setTimeout(() => notif.classList.remove("show"), 2000);
+    }
+
+    function saveToStorage() {
+      localStorage.setItem("todos", JSON.stringify({ todos, counter: todoIdCounter }));
+    }
+
+    function loadFromStorage() {
+      const saved = localStorage.getItem("todos");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        todos = parsed.todos || [];
+        todoIdCounter = parsed.counter || 0;
+      }
+    }
+
+    function renderTodos() {
+      const todoList = document.getElementById("todoList");
+      const searchValue = document.getElementById("searchInput").value.toLowerCase();
+      todoList.innerHTML = "";
+
+      const filteredTodos = todos.filter((t) => t.text.toLowerCase().includes(searchValue));
+
+      if (filteredTodos.length === 0) {
+        todoList.innerHTML = '<div class="empty-state">Tidak ada tugas ditemukan</div>';
+        updateStats();
+        return;
+      }
+
+      filteredTodos.forEach((todo) => {
+        const li = document.createElement("li");
+        li.className = `todo-item ${todo.completed ? "completed" : ""}`;
+        li.innerHTML = `
+          <span class="todo-text">${escapeHtml(todo.text)}</span>
+          <div class="btn-group">
+            <button class="btn btn-done" onclick="toggleComplete(${todo.id})">
+              ${todo.completed ? "Batal" : "Selesai"}
+            </button>
+            <button class="btn btn-delete" onclick="deleteTodo(${todo.id})">
+              Hapus
+            </button>
+          </div>
+        `;
+        todoList.appendChild(li);
+      });
+
+      updateStats();
+    }
+
+    function addTodo() {
+      const input = document.getElementById("todoInput");
+      const text = input.value.trim();
+      if (text === "") {
+        alert("Masukkan tugas dulu, ya 😅");
+        return;
+      }
+
+      todos.push({ id: todoIdCounter++, text, completed: false });
+      input.value = "";
+      saveToStorage();
+      renderTodos();
+      showNotif("✅ Tugas ditambahkan!");
+    }
+
+    function toggleComplete(id) {
+      const todo = todos.find((t) => t.id === id);
+      if (todo) {
+        todo.completed = !todo.completed;
+        saveToStorage();
+        renderTodos();
+        showNotif(todo.completed ? "🎉 Tugas diselesaikan!" : "↩️ Tugas dikembalikan!");
+      }
+    }
+
+    function deleteTodo(id) {
+      todos = todos.filter((t) => t.id !== id);
+      saveToStorage();
+      renderTodos();
+      showNotif("🗑️ Tugas dihapus", "#ef4444");
+    }
+
+    function updateStats() {
+      const statsText = document.getElementById("statsText");
+      const total = todos.length;
+      const completed = todos.filter((t) => t.completed).length;
+      const pending = total - completed;
+
+      statsText.textContent =
+        total === 0
+          ? "Belum ada tugas"
+          : `Total: ${total} | Selesai: ${completed} | Tersisa: ${pending}`;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    document.getElementById("addBtn").addEventListener("click", addTodo);
+    document.getElementById("todoInput").addEventListener("keypress", (e) => {
+      if (e.key === "Enter") addTodo();
+    });
+    document.getElementById("searchInput").addEventListener("input", renderTodos);
+
+    loadFromStorage();
+    renderTodos();
+  </script>
+</body>
+</html>
